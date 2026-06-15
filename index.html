@@ -8,7 +8,7 @@
   OUTIL ADP 2026 — Basketball DI-BSK
   CRMEF Souss-Massa · Section EPS · Formateur BOUARGANE
   Version déployable GitHub Pages — 100% statique, hors-connexion
-  Révision déploiement : juin 2026 — v3.2
+  Révision déploiement : juin 2026 — v3.3
 
   ────────────────────────────────────────────────────────────
   DÉPLOIEMENT GITHUB PAGES — MARCHE À SUIVRE
@@ -37,7 +37,17 @@
     ✅ Cond.9  Fichier monolithique — aucun chemin externe
     ✅ Cond.10 Fichier nommé index.html — prêt GitHub Pages
 
-  MODIFICATIONS v3.2 (révision finale déploiement) :
+  MODIFICATIONS v3.3 (révision finale déploiement) :
+    • Cond.7  @media print renforcé pour l'app principale : window.print() masque
+              désormais header, session-bar, stepper, boutons, import CSV — seul
+              le contenu pédagogique (grille + diagnostic + planification) est imprimé.
+    • Nettoyage : suppression des fonctions JS orphelines gvGenererGrilleVide /
+              gvImprimerGrilleVide / gvEffacerGrilleVide / gvUpdateCount (ancienne
+              version de la grille vide, sans éléments HTML correspondants en v3.x).
+    • Cond.4  Ajout min-width:0 sur .obs-wrapper-mobile pour éviter le dépassement
+              horizontal sur très petits écrans (380px).
+
+  MODIFICATIONS v3.2 (révision précédente) :
     • Cond.5  Double confirmation renforcée pour « Nouvelle session » :
               modal HTML natif remplaçant le seul confirm() — l'enseignant
               doit taper "OUI" pour confirmer l'effacement irréversible.
@@ -688,6 +698,9 @@ input[type="range"]::-webkit-slider-thumb {
   .btn-remove, #csv-input, .abc-btn,
   .obs-cell { display: none !important; }
 
+  /* Masquer zone de saisie grille vide à l'impression */
+  .grille-vide-zone { display: none !important; }
+
   /* Afficher toutes les sections actives seulement */
   .section { display: block !important; }
   .section:not(.active) { display: none !important; }
@@ -752,6 +765,415 @@ input[type="range"]::-webkit-slider-thumb {
   .abc-btn { height: 34px; font-size: 0.78rem; }
   .grille-header-cell { font-size: 0.62rem; padding: 6px 3px; }
   .app-header h1 { font-size: 0.92rem; }
+}
+
+/* ===== GRILLE VIDE — NOUVELLE FONCTIONNALITÉ ===== */
+.grille-vide-zone {
+  background: #f0f7ff;
+  border: 2px dashed #2e6da4;
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  margin-bottom: 16px;
+}
+.grille-vide-zone .gv-title {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: bold;
+  color: var(--primary);
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.grille-vide-zone .gv-subtitle {
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin-bottom: 12px;
+  line-height: 1.5;
+}
+.gv-textarea {
+  width: 100%;
+  min-height: 110px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  font-size: 0.88rem;
+  font-family: var(--font-body);
+  resize: vertical;
+  background: white;
+  transition: border .2s;
+  line-height: 1.6;
+}
+.gv-textarea:focus { outline: none; border-color: var(--primary-light); box-shadow: 0 0 0 2px rgba(46,109,164,0.15); }
+.gv-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+  align-items: center;
+}
+.gv-count { font-size: 0.78rem; color: var(--muted); margin-left: auto; }
+/* Grille vide imprimable */
+#grille-vide-print { display: none; }
+#grille-vide-print.visible { display: block; }
+.gv-print-header {
+  background: var(--primary);
+  color: white;
+  border-radius: 8px 8px 0 0;
+  padding: 10px 16px;
+  font-weight: bold;
+  font-size: 0.95rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.gv-print-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.83rem;
+}
+.gv-print-table th {
+  padding: 8px 10px;
+  text-align: center;
+  font-size: 0.78rem;
+  font-weight: 700;
+  border: 1px solid #ccc;
+}
+.gv-print-table th.nom-th {
+  text-align: left;
+  background: #f4f6f9;
+  color: var(--primary);
+  min-width: 160px;
+}
+.gv-print-table th.obs1-th { background: var(--obs1-head); color: white; }
+.gv-print-table th.obs2-th { background: var(--obs2-head); color: white; }
+.gv-print-table th.obs3-th { background: var(--obs3-head); color: white; }
+.gv-print-table th.sub-th {
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 4px 6px;
+}
+.gv-print-table th.sub-th.obs1 { background: var(--obs1-bg); color: var(--obs1-head); }
+.gv-print-table th.sub-th.obs2 { background: var(--obs2-bg); color: var(--obs2-head); }
+.gv-print-table th.sub-th.obs3 { background: var(--obs3-bg); color: var(--obs3-head); }
+.gv-print-table td {
+  border: 1px solid #ddd;
+  padding: 7px 10px;
+  height: 36px;
+  vertical-align: middle;
+}
+.gv-print-table td.nom-td {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text);
+  text-align: left;
+  background: #fafafa;
+}
+.gv-print-table td.abc-td {
+  text-align: center;
+  min-width: 44px;
+}
+.gv-print-table tr:nth-child(even) td.nom-td { background: #f0f4f8; }
+.gv-print-table tr:nth-child(5n) td { border-bottom: 2px solid #b0bec5; }
+.gv-print-wrap {
+  border: 1px solid #ccc;
+  border-radius: 0 0 8px 8px;
+  overflow: hidden;
+}
+.gv-legend-row th { font-size: 0.7rem; }
+
+@media print {
+  /* Grille vide : gestion impression dédiée */
+  #grille-vide-print.visible { display: block !important; }
+  .grille-vide-zone { border: none; background: none; padding: 0; }
+  .gv-actions, .gv-textarea, .gv-subtitle, .gv-count { display: none !important; }
+  .gv-title { margin-bottom: 10px; }
+}
+
+/* =======================================================================
+   NAVIGATION PAGES TERRAIN
+   ======================================================================= */
+.terrain-tabs {
+  background: #112233;
+  display: flex;
+  align-items: stretch;
+  padding: 0 16px;
+  gap: 2px;
+  border-bottom: 3px solid var(--accent);
+  flex-wrap: wrap;
+}
+.terrain-tab {
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -3px;
+  color: #8eb8d8;
+  padding: 11px 16px;
+  font-size: 0.8rem;
+  font-family: var(--font-body);
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all .2s;
+}
+.terrain-tab:hover  { color: #fff; background: rgba(255,255,255,.06); }
+.terrain-tab.active { color: #fff; border-bottom-color: var(--accent); font-weight: 700; }
+.terrain-tab-sep    { width: 1px; background: rgba(255,255,255,.12); margin: 8px 4px; }
+/* Pages */
+.t-page         { display: none; }
+.t-page.visible { display: block; }
+
+/* =======================================================================
+   PAGE 1 — GRILLE TERRAIN VIDE
+   ======================================================================= */
+.gv2-card {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  padding: 22px 24px;
+  margin-bottom: 16px;
+}
+.gv2-card-title {
+  font-family: var(--font-display);
+  font-size: 1.12rem;
+  font-weight: bold;
+  color: var(--primary);
+  border-bottom: 2px solid var(--primary-light);
+  padding-bottom: 10px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.gv2-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.gv2-field label {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+.gv2-field input {
+  width: 100%;
+  padding: 8px 11px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  font-size: 0.88rem;
+  font-family: var(--font-body);
+  background: white;
+  transition: border .2s;
+}
+.gv2-field input:focus {
+  outline: none;
+  border-color: var(--primary-light);
+  box-shadow: 0 0 0 2px rgba(46,109,164,.15);
+}
+.gv2-nb-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+.gv2-nb-row label { font-size: 0.82rem; font-weight: 600; color: var(--primary); }
+.gv2-nb-row input[type=number] {
+  width: 80px;
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  font-size: 0.9rem;
+  font-family: var(--font-body);
+  text-align: center;
+}
+.gv2-nb-row input[type=number]:focus { outline: none; border-color: var(--primary-light); }
+#gv2-result { display: none; margin-top: 16px; }
+#gv2-result.visible { display: block; }
+.gv2-sheet-header {
+  background: var(--primary);
+  color: white;
+  border-radius: 8px 8px 0 0;
+  padding: 12px 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 8px;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+.gv2-sheet-header .sh-title { font-family: var(--font-display); font-size: 0.98rem; font-weight: bold; line-height: 1.4; }
+.gv2-sheet-header .sh-info  { font-size: 0.8rem; opacity: .85; text-align: right; line-height: 1.6; }
+.gv2-sheet-subheader {
+  background: #e8edf4;
+  border-left: 1px solid #bcc6d4;
+  border-right: 1px solid #bcc6d4;
+  padding: 6px 18px;
+  font-size: 0.76rem;
+  color: var(--muted);
+  font-style: italic;
+}
+.gv2-table-wrap {
+  border: 1px solid #bcc6d4;
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+  overflow: hidden;
+}
+.gv2-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+.gv2-table th { border: 1px solid #bcc6d4; padding: 8px 8px; text-align: center; font-size: 0.74rem; font-weight: 700; }
+.gv2-table th.th-num  { background: #e8edf4; color: var(--primary); width: 36px; }
+.gv2-table th.th-nom  { background: #e8edf4; color: var(--primary); text-align: left; min-width: 160px; }
+.gv2-table th.th-obs1 { background: var(--obs1-head); color: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.gv2-table th.th-obs2 { background: var(--obs2-head); color: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.gv2-table th.th-obs3 { background: var(--obs3-head); color: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.gv2-table th.th-rem  { background: #e8edf4; color: var(--primary); font-size: 0.7rem; min-width: 90px; }
+.gv2-table td { border: 1px solid #d0d8e4; height: 36px; vertical-align: middle; padding: 6px 8px; }
+.gv2-table td.td-num  { text-align: center; font-size: 0.77rem; color: var(--muted); font-weight: 600; background: #f4f6f9; width: 36px; }
+.gv2-table td.td-nom  { font-size: 0.84rem; background: #fafbfd; }
+.gv2-table td.td-obs  { background: white; min-width: 100px; }
+.gv2-table td.td-rem  { background: white; min-width: 90px; }
+.gv2-table tbody tr:nth-child(even) td.td-nom { background: #f0f4f9; }
+.gv2-table tbody tr:nth-child(even) td.td-num { background: #eaeff5; }
+.gv2-table tbody tr:nth-child(5n) td { border-bottom: 2px solid #9aafc4; }
+.gv2-legend { background: #f8fafd; border: 1px solid var(--border); border-top: none; border-radius: 0 0 8px 8px; padding: 9px 16px; font-size: 0.74rem; color: var(--muted); }
+.gv2-legend strong { color: var(--text); }
+.gv2-rules { background: #fffbf0; border: 1px solid #ffe082; border-radius: 8px; padding: 10px 14px; font-size: 0.76rem; color: #5d4400; margin-top: 10px; line-height: 1.7; }
+.gv2-rules strong { color: #3d2d00; }
+
+/* =======================================================================
+   PAGE 2 — GUIDE DES NIVEAUX
+   ======================================================================= */
+.guide-intro { background: #e8f0fb; border: 1px solid #b8d0ea; border-radius: var(--radius); padding: 14px 18px; margin-bottom: 18px; font-size: 0.86rem; color: var(--primary); line-height: 1.6; }
+.guide-obs-card { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); border: 1px solid var(--border); margin-bottom: 20px; overflow: hidden; }
+.guide-obs-header { padding: 13px 20px; color: white; font-weight: bold; font-family: var(--font-display); font-size: 0.98rem; display: flex; align-items: center; gap: 12px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.guide-obs-header.h1 { background: var(--obs1-head); }
+.guide-obs-header.h2 { background: var(--obs2-head); }
+.guide-obs-header.h3 { background: var(--obs3-head); }
+.guide-obs-header .obs-tag { background: rgba(255,255,255,.2); border-radius: 5px; padding: 2px 10px; font-size: 0.74rem; font-family: var(--font-body); font-weight: 600; }
+.guide-indicateur { background: #f8fafd; border-top: 1px dashed var(--border); padding: 10px 18px; font-size: 0.77rem; color: var(--muted); }
+.guide-indicateur strong { color: var(--primary); }
+.guide-levels { display: grid; grid-template-columns: repeat(3, 1fr); }
+.guide-level { padding: 16px 16px 18px; border-right: 1px solid var(--border); }
+.guide-level:last-child { border-right: none; }
+.guide-level.gl-a { background: var(--col-a); }
+.guide-level.gl-b { background: var(--col-b); }
+.guide-level.gl-c { background: var(--col-c); }
+.guide-badge { display: inline-flex; align-items: center; border-radius: 20px; padding: 4px 12px; font-size: 0.8rem; font-weight: 800; margin-bottom: 8px; }
+.guide-badge.ba { background: var(--col-a-border); color: var(--col-a-text); }
+.guide-badge.bb { background: var(--col-b-border); color: var(--col-b-text); }
+.guide-badge.bc { background: var(--col-c-border); color: var(--col-c-text); }
+.guide-code { font-size: 0.67rem; font-weight: 700; font-family: monospace; letter-spacing: .5px; color: var(--muted); margin-bottom: 7px; }
+.guide-desc { font-size: 0.82rem; line-height: 1.6; color: var(--text); margin-bottom: 8px; }
+.guide-conduite { font-size: 0.77rem; color: var(--muted); line-height: 1.5; border-top: 1px solid rgba(0,0,0,.07); padding-top: 7px; }
+.guide-conduite strong { color: var(--text); font-size: 0.75rem; }
+.guide-synthese { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); border: 1px solid var(--border); padding: 18px 20px; margin-bottom: 16px; }
+.guide-synthese-title { font-family: var(--font-display); font-size: 1rem; font-weight: bold; color: var(--primary); border-bottom: 2px solid var(--primary-light); padding-bottom: 8px; margin-bottom: 14px; }
+.guide-synthese table { width: 100%; border-collapse: collapse; font-size: 0.79rem; }
+.guide-synthese th { padding: 8px 12px; border: 1px solid #ccc; }
+.guide-synthese td { padding: 8px 12px; border: 1px solid #ddd; vertical-align: top; }
+@media (max-width: 680px) {
+  .guide-levels { grid-template-columns: 1fr; }
+  .guide-level { border-right: none; border-bottom: 1px solid var(--border); }
+  .guide-level:last-child { border-bottom: none; }
+}
+
+/* =======================================================================
+   IMPRESSION PRINCIPALE — @media print
+   Quand l'enseignant clique "Imprimer / PDF" depuis l'app ADP :
+   - Masquer tout le chrome applicatif (header, session-bar, stepper, nav, boutons)
+   - Afficher uniquement le contenu pédagogique actif (grille + diagnostic + planification)
+   ======================================================================= */
+@media print {
+  /* ── Masquer tout le chrome ── */
+  .app-header,
+  #github-banner,
+  .session-bar,
+  .terrain-tabs,
+  .stepper,
+  .no-note-badge,
+  .import-area,
+  #csv-log,
+  .btn-row,
+  .gv2-nav-row,
+  #gv2-form-card,
+  .gv2-card,
+  #tpage-grille .gv2-card,
+  #tpage-niveaux .guide-intro + div > .btn-row,
+  .guide-intro > *:not(.guide-obs-card),
+  [onclick="tPage('app')"],
+  [onclick="tPage('niveaux')"],
+  [onclick="tPage('guide')"],
+  .modal-overlay
+  { display: none !important; }
+
+  /* ── Pages terrain : n'afficher que la page visible ── */
+  .t-page { display: none !important; }
+  .t-page.visible { display: block !important; }
+
+  /* ── Page app : n'afficher que la section active ── */
+  .section { display: none !important; }
+  .section.active { display: block !important; }
+
+  /* ── Fond blanc, pas de shadow ── */
+  body { background: white !important; }
+  .card { box-shadow: none !important; border: 1px solid #ccc !important; }
+
+  /* ── Couleurs fidèles ── */
+  .grille-header-cell,
+  .grille-header-cell.obs1,
+  .grille-header-cell.obs2,
+  .grille-header-cell.obs3,
+  .gv2-sheet-header,
+  .guide-obs-header,
+  .guide-level,
+  .guide-badge,
+  th { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+
+  /* ── Pas de coupure au milieu d'un bloc ── */
+  .guide-obs-card,
+  .axe-card,
+  .card { page-break-inside: avoid; }
+  tr { page-break-inside: avoid; }
+
+  /* ── En-tête d'impression (date) ── */
+  #print-header { display: block !important; margin-bottom: 12px; font-size: 0.85rem; color: #1a3a5c; }
+}
+
+/* =======================================================================
+   IMPRESSION GRILLE VIDE DÉDIÉE — #grille-impression
+   Quand la classe body.print-grille-vide est active,
+   on masque TOUT sauf #grille-impression
+   ======================================================================= */
+@media print {
+  body.print-grille-vide * {
+    visibility: hidden !important;
+  }
+  body.print-grille-vide #grille-impression,
+  body.print-grille-vide #grille-impression * {
+    visibility: visible !important;
+  }
+  body.print-grille-vide #grille-impression {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    z-index: 99999 !important;
+    background: white !important;
+  }
+  body.print-grille-vide .gv2-sheet-header,
+  body.print-grille-vide .gv2-table th,
+  body.print-grille-vide .gv2-legend,
+  body.print-grille-vide .gv2-rules {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
 }
 
 /* ===== COND.4 — GRILLE EMPILÉE VERTICALEMENT sous 420px ===== */
@@ -824,6 +1246,7 @@ input[type="range"]::-webkit-slider-thumb {
   .obs-wrapper-mobile {
     display: flex;
     gap: 4px;
+    min-width: 0; /* COND.4 v3.3 — évite le dépassement horizontal sur 380px */
   }
 
   /* Barre session : empiler les boutons sur 2 lignes */
@@ -870,6 +1293,20 @@ input[type="range"]::-webkit-slider-thumb {
   <button class="sb-btn danger" onclick="nouvelleSession()" title="Effacer toutes les données et repartir à zéro">🗑️ Nouvelle session</button>
   <span id="sb-status"></span>
 </div>
+
+<!-- ===== NAVIGATION PAGES TERRAIN ===== -->
+<div class="terrain-tabs" id="terrain-tabs">
+  <button class="terrain-tab active" id="tab-app"     onclick="tPage('app')">🏀 Outil ADP — Diagnostic &amp; Planification</button>
+  <div class="terrain-tab-sep"></div>
+  <button class="terrain-tab"        id="tab-grille"  onclick="tPage('grille')">📋 Grille terrain vide</button>
+  <div class="terrain-tab-sep"></div>
+  <button class="terrain-tab"        id="tab-niveaux" onclick="tPage('niveaux')">📘 Guide des niveaux</button>
+  <div class="terrain-tab-sep"></div>
+  <button class="terrain-tab"        id="tab-guide"   onclick="tPage('guide')">📗 Guide d'utilisation</button>
+</div>
+
+<!-- ===== PAGE APP (wrapper) ===== -->
+<div class="t-page visible" id="tpage-app">
 
 <!-- ===== STEPPER ===== -->
 <div class="stepper" id="stepper">
@@ -1068,6 +1505,447 @@ input[type="range"]::-webkit-slider-thumb {
   </div>
 
 </div><!-- /main -->
+
+</div><!-- /tpage-app -->
+
+<!-- =====================================================================
+     PAGE TERRAIN 1 — GRILLE D'OBSERVATION VIDE
+     ===================================================================== -->
+<div class="t-page" id="tpage-grille">
+<div class="main">
+
+  <!-- Formulaire de paramétrage -->
+  <div class="gv2-card" id="gv2-form-card">
+    <div class="gv2-card-title">📋 Grille d'observation vide — Basketball DI-BSK</div>
+
+    <!-- Option noms élèves -->
+    <div style="background:#f0f7ff;border:1.5px dashed #2e6da4;border-radius:8px;padding:14px 16px;margin-bottom:18px;">
+      <div style="font-size:0.85rem;font-weight:700;color:var(--primary);margin-bottom:4px;">📝 Noms des élèves <span style="font-weight:400;color:var(--muted);font-size:0.78rem;">(optionnel)</span></div>
+      <div style="font-size:0.78rem;color:var(--muted);margin-bottom:8px;line-height:1.5;">
+        Saisissez un nom par ligne → la grille affichera les noms.<br>
+        Laissez vide → lignes vierges (nombre contrôlé ci-dessous).
+      </div>
+      <textarea
+        id="gv2-noms"
+        style="width:100%;min-height:100px;padding:9px 12px;border:1px solid var(--border);border-radius:7px;font-size:0.87rem;font-family:var(--font-body);resize:vertical;background:white;line-height:1.6;transition:border .2s;"
+        placeholder="Ex :&#10;Yassine AMRANI&#10;Fatima-Zahra BENALI&#10;Omar TAHIRI&#10;…"
+        oninput="gv2UpdateNomCount()"
+      ></textarea>
+      <div id="gv2-nom-count" style="font-size:0.75rem;color:var(--muted);margin-top:5px;"></div>
+    </div>
+
+    <div class="gv2-meta">
+      <div class="gv2-field">
+        <label>Nom de l'enseignant</label>
+        <input type="text" id="gv2-enseignant" placeholder="Ex : BOUARGANE" value="BOUARGANE">
+      </div>
+      <div class="gv2-field">
+        <label>Groupe</label>
+        <input type="text" id="gv2-groupe" placeholder="Ex : Groupe 1">
+      </div>
+      <div class="gv2-field">
+        <label>Classe</label>
+        <input type="text" id="gv2-classe" placeholder="Ex : 3ème — Collège">
+      </div>
+      <div class="gv2-field">
+        <label>Date</label>
+        <input type="text" id="gv2-date" placeholder="jj/mm/aaaa">
+      </div>
+      <div class="gv2-field">
+        <label>Match / Situation</label>
+        <input type="text" id="gv2-match" placeholder="Ex : DI — Séance 1" value="DI — Séance 1">
+      </div>
+    </div>
+
+    <div class="gv2-nb-row" id="gv2-nb-row">
+      <label>Nombre de lignes (si aucun nom saisi) :</label>
+      <input type="number" id="gv2-nb" min="5" max="40" value="30">
+      <span style="font-size:.78rem;color:var(--muted);">(5 à 40)</span>
+    </div>
+
+    <div class="btn-row" style="margin-bottom:0;">
+      <button class="btn btn-primary" onclick="gv2Generer()">📋 Générer la grille</button>
+      <button class="btn btn-secondary btn-sm" id="gv2-btn-print"   style="display:none;" onclick="gv2ImprimerGrilleVide()">🖨️ Imprimer la grille vide</button>
+      <button class="btn btn-secondary btn-sm" id="gv2-btn-effacer" style="display:none;" onclick="gv2Effacer()">✕ Effacer</button>
+    </div>
+  </div>
+
+  <!-- Grille générée — zone d'impression dédiée -->
+  <div id="grille-impression">
+    <div id="gv2-result"><!-- injecté --></div>
+  </div>
+
+  <div class="btn-row gv2-nav-row" style="margin-top:8px;">
+    <button class="btn btn-secondary btn-sm" onclick="tPage('app')">← Retour à l'outil ADP</button>
+    <button class="btn btn-secondary btn-sm" onclick="tPage('niveaux')">📘 Guide des niveaux</button>
+  </div>
+
+</div><!-- /main -->
+</div><!-- /tpage-grille -->
+
+
+<!-- =====================================================================
+     PAGE TERRAIN 2 — GUIDE DES NIVEAUX DES CRITÈRES
+     ===================================================================== -->
+<div class="t-page" id="tpage-niveaux">
+<div class="main">
+
+  <div class="guide-intro">
+    Ce guide présente les <strong>3 critères d'observation</strong> DI-BSK et décrit précisément les
+    <strong>3 niveaux A · B · C</strong> pour chaque critère.
+    Référentiel à utiliser lors de l'observation terrain — aucun calcul, aucune note.
+  </div>
+
+  <!-- OBS-01 -->
+  <div class="guide-obs-card">
+    <div class="guide-obs-header h1">
+      <span>OBS-01 — Efficacité collective</span>
+      <span class="obs-tag">BSK01- · BSK01~ · BSK01+</span>
+    </div>
+    <div class="guide-levels">
+      <div class="guide-level gl-a">
+        <div class="guide-badge ba">A — Débutant</div>
+        <div class="guide-code">BSK01-</div>
+        <div class="guide-desc">
+          Participation limitée, difficulté à coopérer avec les partenaires et à choisir des solutions collectives.
+        </div>
+        <div class="guide-conduite">
+          <strong>Conduite observée :</strong><br>
+          L'équipe avance sans passe ni organisation — chacun joue pour lui, sans projet collectif.
+        </div>
+      </div>
+      <div class="guide-level gl-b">
+        <div class="guide-badge bb">B — Intermédiaire</div>
+        <div class="guide-code">BSK01~</div>
+        <div class="guide-desc">
+          Participe aux actions collectives avec une coopération moyenne. Le jeu d'équipe est présent mais irrégulier.
+        </div>
+        <div class="guide-conduite">
+          <strong>Conduite observée :</strong><br>
+          Montée rapide si libre, sinon jeu placé sans variation — l'équipe lit les situations simples.
+        </div>
+      </div>
+      <div class="guide-level gl-c">
+        <div class="guide-badge bc">C — Avancé</div>
+        <div class="guide-code">BSK01+</div>
+        <div class="guide-desc">
+          Coopération efficace et choix adaptés dans le jeu. L'équipe choisit consciemment entre jeu rapide et jeu placé.
+        </div>
+        <div class="guide-conduite">
+          <strong>Conduite observée :</strong><br>
+          Choix conscient jeu rapide/placé, adapté au rapport de force — projet collectif adaptatif.
+        </div>
+      </div>
+    </div>
+    <div class="guide-indicateur">
+      <strong>📋 Indicateur terrain :</strong>
+      L'équipe enchaîne au moins une séquence jeu rapide puis jeu placé avec communication observable entre 2 joueurs.
+    </div>
+  </div>
+
+  <!-- OBS-02 -->
+  <div class="guide-obs-card">
+    <div class="guide-obs-header h2">
+      <span>OBS-02 — Occupation de l'espace</span>
+      <span class="obs-tag">BSK02- · BSK02~ · BSK02+</span>
+    </div>
+    <div class="guide-levels">
+      <div class="guide-level gl-a">
+        <div class="guide-badge ba">A — Débutant</div>
+        <div class="guide-code">BSK02-</div>
+        <div class="guide-desc">
+          Déplacement limité et mauvais placement. Les espaces latéraux ne sont pas exploités — grappe dominante.
+        </div>
+        <div class="guide-conduite">
+          <strong>Conduite observée :</strong><br>
+          Joueurs regroupés autour du ballon, jeu compact dans l'axe, côtés libres mais ignorés.
+        </div>
+      </div>
+      <div class="guide-level gl-b">
+        <div class="guide-badge bb">B — Intermédiaire</div>
+        <div class="guide-code">BSK02~</div>
+        <div class="guide-desc">
+          Utilise certains espaces utiles. L'élargissement est occasionnel, sans constance ni organisation.
+        </div>
+        <div class="guide-conduite">
+          <strong>Conduite observée :</strong><br>
+          Certains joueurs s'écartent vers les côtés par moments — le jeu reste irrégulier.
+        </div>
+      </div>
+      <div class="guide-level gl-c">
+        <div class="guide-badge bc">C — Avancé</div>
+        <div class="guide-code">BSK02+</div>
+        <div class="guide-desc">
+          Crée et exploite efficacement les espaces. Largeur utilisée, renversement du jeu, absence de grappe.
+        </div>
+        <div class="guide-conduite">
+          <strong>Conduite observée :</strong><br>
+          Joueurs répartis sur toute la largeur — ballon circule d'un côté à l'autre avec intention.
+        </div>
+      </div>
+    </div>
+    <div class="guide-indicateur">
+      <strong>📋 Indicateur terrain :</strong>
+      Le NPB s'écarte spontanément vers un couloir latéral dans au moins 2 actions sur 3 en situation de jeu.
+    </div>
+  </div>
+
+  <!-- OBS-03 -->
+  <div class="guide-obs-card">
+    <div class="guide-obs-header h3">
+      <span>OBS-03 — Efficacité individuelle</span>
+      <span class="obs-tag">BSK03- · BSK03~ · BSK03+</span>
+    </div>
+    <div class="guide-levels">
+      <div class="guide-level gl-a">
+        <div class="guide-badge ba">A — Débutant</div>
+        <div class="guide-code">BSK03-</div>
+        <div class="guide-desc">
+          Maîtrise technique faible. L'élève ne fait pas toujours les bons choix — pertes de balle fréquentes.
+        </div>
+        <div class="guide-conduite">
+          <strong>Conduite observée :</strong><br>
+          Perd le ballon ou mauvais choix (passe/dribble/tir) sous pression — peu disponible pour les partenaires.
+        </div>
+      </div>
+      <div class="guide-level gl-b">
+        <div class="guide-badge bb">B — Intermédiaire</div>
+        <div class="guide-code">BSK03~</div>
+        <div class="guide-desc">
+          Réalise les gestes avec quelques erreurs. Conserve le ballon en situation simple, identifie le 1c0.
+        </div>
+        <div class="guide-conduite">
+          <strong>Conduite observée :</strong><br>
+          Bon choix en situation simple — les choix se dégradent sous pression forte ou situation complexe.
+        </div>
+      </div>
+      <div class="guide-level gl-c">
+        <div class="guide-badge bc">C — Avancé</div>
+        <div class="guide-code">BSK03+</div>
+        <div class="guide-desc">
+          Gestes techniques efficaces et adaptés. Varie les actions selon le rapport de force défensif.
+        </div>
+        <div class="guide-conduite">
+          <strong>Conduite observée :</strong><br>
+          Varie conditions d'accès à la cible, tire en position favorable — ressources technico-tactiques automatisées.
+        </div>
+      </div>
+    </div>
+    <div class="guide-indicateur">
+      <strong>📋 Indicateur terrain :</strong>
+      Le PB effectue le bon choix (passe / dribble / tir) sans perte de balle dans au moins 2 situations sur 3 sous pression.
+    </div>
+  </div>
+
+  <!-- Tableau synthèse -->
+  <div class="guide-synthese">
+    <div class="guide-synthese-title">📊 Tableau synthèse — Niveaux A · B · C</div>
+    <div style="overflow-x:auto;">
+      <table>
+        <thead>
+          <tr>
+            <th style="background:var(--primary);color:white;text-align:left;">Critère</th>
+            <th style="background:var(--col-a);color:var(--col-a-text);">A — Débutant</th>
+            <th style="background:var(--col-b);color:var(--col-b-text);">B — Intermédiaire</th>
+            <th style="background:var(--col-c);color:var(--col-c-text);">C — Avancé</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="font-weight:700;color:var(--obs1-head);background:var(--obs1-bg);">OBS-01<br><span style="font-weight:400;font-size:.74rem;">Efficacité collective</span></td>
+            <td>Jeu individuel, sans passes ni organisation</td>
+            <td>Coopération partielle, jeu d'équipe irrégulier</td>
+            <td>Choix collectif conscient, jeu rapide/placé combinés</td>
+          </tr>
+          <tr>
+            <td style="font-weight:700;color:var(--obs2-head);background:var(--obs2-bg);">OBS-02<br><span style="font-weight:400;font-size:.74rem;">Occupation espace</span></td>
+            <td>Grappe dominante, espaces ignorés</td>
+            <td>Décrochages occasionnels, jeu irrégulier</td>
+            <td>Largeur exploitée, renversement systématique</td>
+          </tr>
+          <tr>
+            <td style="font-weight:700;color:var(--obs3-head);background:var(--obs3-bg);">OBS-03<br><span style="font-weight:400;font-size:.74rem;">Efficacité individuelle</span></td>
+            <td>Pertes de balle, mauvais choix</td>
+            <td>Conservation du ballon, solution simple</td>
+            <td>Gestes variés, adaptation au contexte</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="btn-row" style="margin-top:0;">
+    <button class="btn btn-secondary btn-sm" onclick="tPage('app')">← Retour à l'outil ADP</button>
+    <button class="btn btn-secondary btn-sm" onclick="tPage('grille')">📋 Grille terrain vide</button>
+    <button class="btn btn-secondary btn-sm" onclick="window.print()">🖨️ Imprimer ce guide</button>
+  </div>
+
+</div><!-- /main -->
+</div><!-- /tpage-niveaux -->
+
+
+<!-- ===== PAGE GUIDE D'UTILISATION ===== -->
+<div class="t-page" id="tpage-guide">
+<div class="main">
+
+  <div class="guide-obs-header" style="background:var(--primary);color:white;padding:16px 24px;border-radius:10px 10px 0 0;display:flex;align-items:center;gap:14px;margin-bottom:0;">
+    <span style="font-size:1.6rem;">📗</span>
+    <div>
+      <div style="font-family:var(--font-display);font-size:1.1rem;font-weight:bold;">Guide d'utilisation — Basketball DI-BSK</div>
+      <div style="font-size:0.8rem;opacity:.85;margin-top:2px;">ADP 2026 · CRMEF Souss-Massa · Section EPS · Formateur BOUARGANE</div>
+    </div>
+  </div>
+
+  <!-- Étapes -->
+  <div class="card" style="border-radius:0;border-top:none;margin-top:0;padding:0;">
+
+    <!-- Étape 1 -->
+    <div style="border-bottom:1px solid var(--border);padding:20px 24px;">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+        <div style="background:var(--primary);color:white;border-radius:50%;width:34px;height:34px;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:1rem;flex-shrink:0;">1</div>
+        <div style="font-family:var(--font-display);font-size:1rem;font-weight:bold;color:var(--primary);">Préparation de la séance</div>
+      </div>
+      <ul style="list-style:none;padding-left:46px;line-height:2;font-size:0.9rem;color:var(--text);">
+        <li>✅ Entrer les informations de la classe (enseignant, classe, date, situation de match).</li>
+        <li>✅ Ajouter les noms des élèves dans la zone de saisie.</li>
+        <li>✅ Générer la grille d'observation vide depuis l'onglet <strong>📋 Grille terrain vide</strong>.</li>
+      </ul>
+    </div>
+
+    <!-- Étape 2 -->
+    <div style="border-bottom:1px solid var(--border);padding:20px 24px;background:#f9fbfd;">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+        <div style="background:#2e6da4;color:white;border-radius:50%;width:34px;height:34px;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:1rem;flex-shrink:0;">2</div>
+        <div style="font-family:var(--font-display);font-size:1rem;font-weight:bold;color:#2e6da4;">Observation sur le terrain</div>
+      </div>
+      <ul style="list-style:none;padding-left:46px;line-height:2;font-size:0.9rem;color:var(--text);">
+        <li>🖨️ Imprimer la grille terrain via le bouton <strong>Imprimer la grille vide</strong>.</li>
+        <li>👁️ Observer les élèves pendant l'activité (2 secondes par élève).</li>
+        <li>✏️ Remplir les critères <strong>OBS-01</strong>, <strong>OBS-02</strong>, <strong>OBS-03</strong> — une seule case cochée par observable (A, B ou C).</li>
+        <li>💡 En cas de doute : laisser la case vide et noter « ? ».</li>
+      </ul>
+    </div>
+
+    <!-- Étape 3 -->
+    <div style="border-bottom:1px solid var(--border);padding:20px 24px;">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+        <div style="background:#1e6b3a;color:white;border-radius:50%;width:34px;height:34px;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:1rem;flex-shrink:0;">3</div>
+        <div style="font-family:var(--font-display);font-size:1rem;font-weight:bold;color:#1e6b3a;">Saisie des données</div>
+      </div>
+      <ul style="list-style:none;padding-left:46px;line-height:2;font-size:0.9rem;color:var(--text);">
+        <li>🔙 Retourner à l'application via l'onglet <strong>🏀 Outil ADP</strong>.</li>
+        <li>📥 Importer le fichier CSV rempli via le bouton <strong>Import CSV</strong> — ou saisir manuellement dans la grille.</li>
+        <li>🔍 Vérifier les données importées avant de passer à l'étape suivante.</li>
+      </ul>
+    </div>
+
+    <!-- Étape 4 -->
+    <div style="border-bottom:1px solid var(--border);padding:20px 24px;background:#f9fbfd;">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+        <div style="background:#7b3a00;color:white;border-radius:50%;width:34px;height:34px;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:1rem;flex-shrink:0;">4</div>
+        <div style="font-family:var(--font-display);font-size:1rem;font-weight:bold;color:#7b3a00;">Analyse des résultats</div>
+      </div>
+      <ul style="list-style:none;padding-left:46px;line-height:2;font-size:0.9rem;color:var(--text);">
+        <li>👤 Consulter le <strong>Tableau individuel</strong> pour visualiser le profil de chaque élève.</li>
+        <li>📊 Consulter le <strong>Bilan de classe</strong> pour une vue d'ensemble.</li>
+        <li>🎯 Consulter l'<strong>Analyse par observable</strong> pour cibler les axes d'amélioration.</li>
+        <li>👥 Identifier les <strong>Groupes de besoin</strong> pour organiser la différenciation pédagogique.</li>
+      </ul>
+    </div>
+
+    <!-- Étape 5 -->
+    <div style="padding:20px 24px;">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+        <div style="background:#5b2d8e;color:white;border-radius:50%;width:34px;height:34px;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:1rem;flex-shrink:0;">5</div>
+        <div style="font-family:var(--font-display);font-size:1rem;font-weight:bold;color:#5b2d8e;">Sauvegarde</div>
+      </div>
+      <ul style="list-style:none;padding-left:46px;line-height:2;font-size:0.9rem;color:var(--text);">
+        <li>💾 Exporter les résultats en <strong>CSV</strong> pour les réutiliser dans un tableur.</li>
+        <li>📦 Exporter la session complète en <strong>JSON</strong> via le bouton <strong>Exporter session</strong>.</li>
+        <li>🔄 Restaurer une session précédente via <strong>Importer session</strong>.</li>
+      </ul>
+    </div>
+
+  </div><!-- /card étapes -->
+
+  <!-- Description des critères -->
+  <div class="card" style="margin-top:18px;padding:0;overflow:hidden;">
+    <div style="background:var(--primary);color:white;padding:12px 24px;font-family:var(--font-display);font-size:0.95rem;font-weight:bold;">
+      📐 Description des critères d'observation
+    </div>
+
+    <!-- OBS-01 -->
+    <div style="display:flex;gap:0;border-bottom:1px solid var(--border);">
+      <div style="background:var(--obs1-head);color:white;padding:16px 18px;min-width:130px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;-webkit-print-color-adjust:exact;print-color-adjust:exact;">
+        <div style="font-size:1.3rem;margin-bottom:4px;">🤝</div>
+        <div style="font-weight:bold;font-size:0.9rem;">OBS-01</div>
+        <div style="font-size:0.72rem;opacity:.85;margin-top:2px;">BSK01</div>
+      </div>
+      <div style="padding:16px 20px;flex:1;">
+        <div style="font-weight:bold;font-size:0.95rem;color:var(--obs1-head);margin-bottom:8px;">Efficacité collective</div>
+        <div style="font-size:0.85rem;color:var(--text);line-height:1.7;">
+          Évalue la capacité de l'équipe à organiser son jeu collectivement.<br>
+          <span style="color:var(--muted);font-size:.8rem;">
+            <strong>A — Débutant :</strong> Jeu individuel, sans passes ni organisation.<br>
+            <strong>B — Intermédiaire :</strong> Coopération partielle, jeu d'équipe irrégulier.<br>
+            <strong>C — Avancé :</strong> Choix collectif conscient, jeu rapide/placé combinés.
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- OBS-02 -->
+    <div style="display:flex;gap:0;border-bottom:1px solid var(--border);">
+      <div style="background:var(--obs2-head);color:white;padding:16px 18px;min-width:130px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;-webkit-print-color-adjust:exact;print-color-adjust:exact;">
+        <div style="font-size:1.3rem;margin-bottom:4px;">🗺️</div>
+        <div style="font-weight:bold;font-size:0.9rem;">OBS-02</div>
+        <div style="font-size:0.72rem;opacity:.85;margin-top:2px;">BSK02</div>
+      </div>
+      <div style="padding:16px 20px;flex:1;">
+        <div style="font-weight:bold;font-size:0.95rem;color:var(--obs2-head);margin-bottom:8px;">Occupation de l'espace</div>
+        <div style="font-size:0.85rem;color:var(--text);line-height:1.7;">
+          Évalue la manière dont les joueurs utilisent et exploitent l'espace de jeu.<br>
+          <span style="color:var(--muted);font-size:.8rem;">
+            <strong>A — Débutant :</strong> Grappe dominante, espaces ignorés.<br>
+            <strong>B — Intermédiaire :</strong> Décrochages occasionnels, jeu irrégulier.<br>
+            <strong>C — Avancé :</strong> Largeur exploitée, renversement systématique.
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- OBS-03 -->
+    <div style="display:flex;gap:0;">
+      <div style="background:var(--obs3-head);color:white;padding:16px 18px;min-width:130px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;-webkit-print-color-adjust:exact;print-color-adjust:exact;">
+        <div style="font-size:1.3rem;margin-bottom:4px;">⚡</div>
+        <div style="font-weight:bold;font-size:0.9rem;">OBS-03</div>
+        <div style="font-size:0.72rem;opacity:.85;margin-top:2px;">BSK03</div>
+      </div>
+      <div style="padding:16px 20px;flex:1;">
+        <div style="font-weight:bold;font-size:0.95rem;color:var(--obs3-head);margin-bottom:8px;">Efficacité individuelle</div>
+        <div style="font-size:0.85rem;color:var(--text);line-height:1.7;">
+          Évalue les actions techniques et décisionnelles de chaque élève.<br>
+          <span style="color:var(--muted);font-size:.8rem;">
+            <strong>A — Débutant :</strong> Pertes de balle, mauvais choix.<br>
+            <strong>B — Intermédiaire :</strong> Conservation du ballon, solution simple.<br>
+            <strong>C — Avancé :</strong> Gestes variés, adaptation au contexte.
+          </span>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /card critères -->
+
+  <!-- Boutons retour -->
+  <div class="btn-row" style="margin-top:16px;">
+    <button class="btn btn-secondary btn-sm" onclick="tPage('app')">← Retour à l'outil ADP</button>
+    <button class="btn btn-secondary btn-sm" onclick="tPage('grille')">📋 Grille terrain vide</button>
+    <button class="btn btn-secondary btn-sm" onclick="tPage('niveaux')">📘 Guide des niveaux</button>
+  </div>
+
+</div><!-- /main -->
+</div><!-- /tpage-guide -->
+
 
 <!-- ===== MODAL DOUBLE CONFIRMATION — COND.5 ===== -->
 <div class="modal-overlay" id="modal-nouvelle-session" role="dialog" aria-modal="true" aria-labelledby="modal-titre">
@@ -2181,6 +3059,375 @@ window.onload = function() {
     afficherStatut('🆕 Nouvelle session');
   }
 };
+
+// =======================================================================
+//  NAVIGATION PAGES TERRAIN
+// =======================================================================
+function tPage(page) {
+  var pages = ['app', 'grille', 'niveaux', 'guide'];
+  pages.forEach(function(p) {
+    var pg  = document.getElementById('tpage-' + p);
+    var tab = document.getElementById('tab-' + p);
+    if (pg)  pg.classList.remove('visible');
+    if (tab) tab.classList.remove('active');
+  });
+  var target = document.getElementById('tpage-' + page);
+  var tabTarget = document.getElementById('tab-' + page);
+  if (target)    target.classList.add('visible');
+  if (tabTarget) tabTarget.classList.add('active');
+  // Pré-remplir la date si vide
+  if (page === 'grille') {
+    var df = document.getElementById('gv2-date');
+    if (df && !df.value) df.value = new Date().toLocaleDateString('fr-FR');
+  }
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// =======================================================================
+//  PAGE 1 — GÉNÉRATION DE LA GRILLE VIDE
+// =======================================================================
+function gv2UpdateNomCount() {
+  var ta = document.getElementById('gv2-noms');
+  var nbRow = document.getElementById('gv2-nb-row');
+  if (!ta) return;
+  var noms = ta.value.split('\n').map(function(n){ return n.trim(); }).filter(function(n){ return n.length > 0; });
+  var cntEl = document.getElementById('gv2-nom-count');
+  if (noms.length > 0) {
+    cntEl.textContent = noms.length + ' élève(s) saisi(s) — le champ "nombre de lignes" sera ignoré.';
+    if (nbRow) nbRow.style.opacity = '0.4';
+  } else {
+    cntEl.textContent = '';
+    if (nbRow) nbRow.style.opacity = '1';
+  }
+}
+
+function gv2Generer() {
+  var enseignant = (document.getElementById('gv2-enseignant').value || '').trim();
+  var groupe     = (document.getElementById('gv2-groupe') ? document.getElementById('gv2-groupe').value : '').trim();
+  var classe     = (document.getElementById('gv2-classe').value     || '').trim();
+  var date       = (document.getElementById('gv2-date').value       || new Date().toLocaleDateString('fr-FR')).trim();
+  var match      = (document.getElementById('gv2-match').value      || '').trim();
+
+  // Récupérer les noms saisis (optionnel)
+  var nomsRaw = (document.getElementById('gv2-noms') ? document.getElementById('gv2-noms').value : '');
+  var noms = nomsRaw.split('\n').map(function(n){ return n.trim(); }).filter(function(n){ return n.length > 0; });
+  var avecNoms = noms.length > 0;
+
+  var nb;
+  if (avecNoms) {
+    nb = noms.length;
+  } else {
+    nb = parseInt(document.getElementById('gv2-nb').value) || 30;
+    nb = Math.min(40, Math.max(5, nb));
+  }
+
+  var h = '';
+
+  // En-tête de la fiche
+  h += '<div class="gv2-sheet-header">';
+  h += '<div class="sh-title">';
+  h += 'CRMEF Souss-Massa &nbsp;·&nbsp; Section EPS &nbsp;·&nbsp; Formateur BOUARGANE<br>';
+  h += '<span style="font-size:1.05rem;">GRILLE D\'OBSERVATION TERRAIN — ADP 2026</span><br>';
+  h += '<span style="font-size:.85rem;opacity:.9;">APS : Basketball &nbsp;·&nbsp; Diagnostique Initial (DI-BSK) &nbsp;·&nbsp; Codes : BSK01 · BSK02 · BSK03</span>';
+  h += '</div>';
+  h += '<div class="sh-info">';
+  if (enseignant) h += 'Enseignant : <strong>' + hesc(enseignant) + '</strong><br>';
+  if (groupe)     h += 'Groupe : <strong>' + hesc(groupe) + '</strong><br>';
+  if (classe)     h += 'Classe : <strong>' + hesc(classe) + '</strong><br>';
+  if (date)       h += 'Date : <strong>' + hesc(date) + '</strong><br>';
+  if (match)      h += 'Situation : <strong>' + hesc(match) + '</strong>';
+  h += '</div>';
+  h += '</div>';
+
+  h += '<div class="gv2-sheet-subheader">';
+  h += 'Cocher une seule case (A, B ou C) par observable &nbsp;·&nbsp; 2 secondes par élève &nbsp;·&nbsp; Aucune note chiffrée';
+  h += '</div>';
+
+  // Table
+  h += '<div class="gv2-table-wrap"><table class="gv2-table"><thead>';
+  h += '<tr>';
+  h += '<th class="th-num" rowspan="2">N°</th>';
+  h += '<th class="th-nom" rowspan="2">NOM / PRÉNOM</th>';
+  h += '<th class="th-obs1" colspan="3">OBS-01<br>Engagement collectif / transition</th>';
+  h += '<th class="th-obs2" colspan="3">OBS-02<br>Occupation de l\'espace</th>';
+  h += '<th class="th-obs3" colspan="3">OBS-03<br>Efficacité individuelle</th>';
+  h += '<th class="th-rem" rowspan="2">Observations</th>';
+  h += '</tr>';
+  h += '<tr>';
+  var sub = [['th-obs1','s1'],['th-obs1','s1'],['th-obs1','s1'],
+             ['th-obs2','s2'],['th-obs2','s2'],['th-obs2','s2'],
+             ['th-obs3','s3'],['th-obs3','s3'],['th-obs3','s3']];
+  var abc = ['A — Débutant','B — Intermédiaire','C — Avancé'];
+  for (var g = 0; g < 3; g++) {
+    abc.forEach(function(lbl, li) {
+      var bg = ['var(--obs'+(g+1)+'-bg)','var(--obs'+(g+1)+'-bg)','var(--obs'+(g+1)+'-bg)'][0];
+      var cl = ['var(--obs'+(g+1)+'-head)'][0];
+      h += '<th style="font-size:.64rem;font-weight:600;padding:4px 5px;background:' + bg + ';color:' + cl + ';border:1px solid #bcc6d4;">' + ['A','B','C'][li] + '<br><span style="font-weight:400;font-size:.58rem;">' + ['Déb.','Int.','Av.'][li] + '</span></th>';
+    });
+  }
+  h += '</tr>';
+  h += '</thead><tbody>';
+  for (var i = 1; i <= nb; i++) {
+    var nomEleve = avecNoms ? hesc(noms[i-1]) : '';
+    h += '<tr>';
+    h += '<td class="td-num">' + i + '</td>';
+    h += '<td class="td-nom">' + nomEleve + '</td>';
+    for (var c = 0; c < 9; c++) h += '<td class="td-obs"></td>';
+    h += '<td class="td-rem"></td>';
+    h += '</tr>';
+  }
+  h += '</tbody></table></div>';
+
+  // Remarques
+  h += '<div style="border:1px solid #bcc6d4;border-top:none;padding:10px 16px;background:#fafbfd;font-size:.82rem;color:var(--text);">';
+  h += '<strong>Remarques / Observations générales :</strong>&nbsp;';
+  h += '<span style="display:inline-block;width:70%;border-bottom:1px solid #ccc;min-height:18px;"> </span>';
+  h += '</div>';
+
+  // Légende
+  h += '<div class="gv2-legend">';
+  h += '<strong>LÉGENDE :</strong>';
+  h += ' &nbsp;A — DÉBUTANT : Jeu direct · grappe dominante · intermittent';
+  h += ' &nbsp;·&nbsp; B — INTERMÉDIAIRE : Jeu simple · grappe réduite · jeu rapide ou placé';
+  h += ' &nbsp;·&nbsp; C — AVANCÉ : Jeu varié · largeur exploitée · actions variées';
+  h += '</div>';
+
+  // Règles terrain
+  h += '<div class="gv2-rules">';
+  h += '<strong>RÈGLES TERRAIN ·</strong>';
+  h += ' R1 : 1 seul code par case — jamais 2';
+  h += ' &nbsp;·&nbsp; R2 : Doute → case vide + « ? »';
+  h += ' &nbsp;·&nbsp; R3 : Code dominant = ce qui est vu EN PREMIER';
+  h += ' &nbsp;·&nbsp; R4 : Stylo noir uniquement';
+  h += '</div>';
+
+  var cont = document.getElementById('gv2-result');
+  cont.innerHTML = h;
+  cont.classList.add('visible');
+  document.getElementById('gv2-btn-print').style.display   = '';
+  document.getElementById('gv2-btn-effacer').style.display = '';
+  cont.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function gv2Effacer() {
+  var cont = document.getElementById('gv2-result');
+  cont.innerHTML = '';
+  cont.classList.remove('visible');
+  document.getElementById('gv2-btn-print').style.display   = 'none';
+  document.getElementById('gv2-btn-effacer').style.display = 'none';
+}
+
+function gv2ImprimerGrilleVide() {
+  var grilleEl = document.getElementById('gv2-result');
+  if (!grilleEl || !grilleEl.classList.contains('visible')) {
+    alert('Veuillez d\'abord générer la grille avant d\'imprimer.');
+    return;
+  }
+
+  /* ── Récupérer les données du formulaire ── */
+  var enseignant = (document.getElementById('gv2-enseignant').value || '').trim();
+  var groupe     = (document.getElementById('gv2-groupe')     ? document.getElementById('gv2-groupe').value     : '').trim();
+  var classe     = (document.getElementById('gv2-classe').value     || '').trim();
+  var date       = (document.getElementById('gv2-date').value       || new Date().toLocaleDateString('fr-FR')).trim();
+  var nomsRaw    = (document.getElementById('gv2-noms') ? document.getElementById('gv2-noms').value : '');
+  var noms       = nomsRaw.split('\n').map(function(n){ return n.trim(); }).filter(function(n){ return n.length > 0; });
+  var avecNoms   = noms.length > 0;
+  var nb = avecNoms ? noms.length : (parseInt(document.getElementById('gv2-nb').value) || 30);
+  nb = Math.min(40, Math.max(5, nb));
+
+  function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+  /* ══════════════════════════════════════════
+     PAGE 1 — GRILLE TERRAIN
+  ══════════════════════════════════════════ */
+  var p1 = '';
+  // En-tête
+  p1 += '<div class="sheet-header">';
+  p1 += '<div class="sh-title">CRMEF Souss-Massa &nbsp;·&nbsp; Section EPS &nbsp;·&nbsp; Formateur BOUARGANE<br>';
+  p1 += '<span style="font-size:1rem;">GRILLE D\'OBSERVATION TERRAIN — ADP 2026</span><br>';
+  p1 += '<span style="font-size:.82rem;opacity:.9;">APS : Basketball &nbsp;·&nbsp; Diagnostique Initial (DI-BSK)</span>';
+  p1 += '</div>';
+  p1 += '<div class="sh-info">';
+  p1 += 'APS : <strong>Basketball</strong><br>';
+  if (groupe)     p1 += 'Groupe : <strong>' + esc(groupe)     + '</strong><br>';
+  if (classe)     p1 += 'Classe : <strong>' + esc(classe)     + '</strong><br>';
+  if (date)       p1 += 'Date : <strong>'   + esc(date)       + '</strong><br>';
+  if (enseignant) p1 += 'Enseignant : <strong>' + esc(enseignant) + '</strong>';
+  p1 += '</div>';
+  p1 += '</div>'; // sheet-header
+
+  // Sous-en-tête
+  p1 += '<div class="sheet-sub">Cocher une seule case (A, B ou C) par observable &nbsp;·&nbsp; 2 secondes par élève &nbsp;·&nbsp; Aucune note chiffrée</div>';
+
+  // Tableau
+  p1 += '<table class="gtable"><thead>';
+  p1 += '<tr>';
+  p1 += '<th class="th-num" rowspan="2">N°</th>';
+  p1 += '<th class="th-nom" rowspan="2">Nom élève</th>';
+  p1 += '<th class="th-obs1" colspan="3">OBS-01<br><span style="font-size:.65rem;font-weight:400;">Engagement collectif / transition</span></th>';
+  p1 += '<th class="th-obs2" colspan="3">OBS-02<br><span style="font-size:.65rem;font-weight:400;">Occupation de l\'espace</span></th>';
+  p1 += '<th class="th-obs3" colspan="3">OBS-03<br><span style="font-size:.65rem;font-weight:400;">Efficacité individuelle</span></th>';
+  p1 += '<th class="th-rem" rowspan="2">Observations</th>';
+  p1 += '</tr><tr>';
+  for (var g = 1; g <= 3; g++) {
+    p1 += '<th class="sub obs' + g + '">A<br><span style="font-weight:400;font-size:.6rem;">Déb.</span></th>';
+    p1 += '<th class="sub obs' + g + '">B<br><span style="font-weight:400;font-size:.6rem;">Int.</span></th>';
+    p1 += '<th class="sub obs' + g + '">C<br><span style="font-weight:400;font-size:.6rem;">Av.</span></th>';
+  }
+  p1 += '</tr></thead><tbody>';
+  for (var i = 1; i <= nb; i++) {
+    var nom = avecNoms ? esc(noms[i-1]) : '';
+    p1 += '<tr>';
+    p1 += '<td class="td-num">' + i + '</td>';
+    p1 += '<td class="td-nom">' + nom + '</td>';
+    for (var c = 0; c < 9; c++) p1 += '<td class="td-obs"></td>';
+    p1 += '<td class="td-rem"></td>';
+    p1 += '</tr>';
+  }
+  p1 += '</tbody></table>';
+
+  /* ══════════════════════════════════════════
+     PAGE 2 — DESCRIPTION DES CRITÈRES
+  ══════════════════════════════════════════ */
+  var p2 = '';
+  p2 += '<div class="p2-header">📐 Description des critères d\'observation — Basketball DI-BSK</div>';
+  p2 += '<div class="p2-intro">Guide de codage rapide A / B / C pour l\'enseignant — à utiliser avec la grille terrain.</div>';
+
+  var obsData = [
+    { cls:'h1', titre:'OBS-01 — Engagement collectif / transition attaque-défense', tag:'BSK01',
+      a:{ label:'A — Débutant',       desc:'Jeu individuel, sans passes ni organisation collective. L\'équipe avance sans projet commun.',
+          cond:'Chacun joue pour lui — pas de transition visible après perte ou récupération du ballon.' },
+      b:{ label:'B — Intermédiaire',  desc:'Coopération partielle, jeu d\'équipe irrégulier. Montée rapide si libre, sinon jeu placé sans variation.',
+          cond:'L\'équipe lit les situations simples mais la transition attaque-défense reste hésitante.' },
+      c:{ label:'C — Avancé',         desc:'Choix collectif conscient entre jeu rapide et jeu placé. Transition attaque-défense organisée et rapide.',
+          cond:'Communication observable, projet collectif adaptatif selon le rapport de force.' },
+      ind:'L\'équipe enchaîne jeu rapide puis jeu placé avec communication observable entre 2 joueurs.' },
+    { cls:'h2', titre:'OBS-02 — Occupation de l\'espace (grappe, largeur du jeu)', tag:'BSK02',
+      a:{ label:'A — Débutant',       desc:'Grappe dominante, espaces latéraux ignorés. Joueurs regroupés autour du ballon dans l\'axe.',
+          cond:'Côtés libres mais non exploités — jeu compact et prévisible.' },
+      b:{ label:'B — Intermédiaire',  desc:'Décrochages occasionnels, jeu irrégulier. Élargissement présent mais sans constance ni organisation.',
+          cond:'Certains joueurs s\'écartent par moments — grappe réduite mais persistante.' },
+      c:{ label:'C — Avancé',         desc:'Largeur exploitée, renversement systématique. Absence de grappe, espaces créés intentionnellement.',
+          cond:'Ballon circule d\'un côté à l\'autre avec intention — jeu ouvert et lisible.' },
+      ind:'Le NPB s\'écarte spontanément vers un couloir latéral dans au moins 2 actions sur 3.' },
+    { cls:'h3', titre:'OBS-03 — Efficacité individuelle (maîtrise, choix, démarquage)', tag:'BSK03',
+      a:{ label:'A — Débutant',       desc:'Pertes de balle fréquentes, mauvais choix sous pression. Maîtrise technique faible.',
+          cond:'Perd le ballon ou mauvais choix (passe/dribble/tir) — peu disponible pour les partenaires.' },
+      b:{ label:'B — Intermédiaire',  desc:'Conservation du ballon en situation simple, identifie le 1c0. Solution simple privilégiée.',
+          cond:'Bon choix en situation simple — dégradation sous pression forte ou situation complexe.' },
+      c:{ label:'C — Avancé',         desc:'Gestes variés et adaptés, démarquage actif. Ressources technico-tactiques automatisées.',
+          cond:'Varie les actions selon le rapport de force — tir en position favorable.' },
+      ind:'Le PB effectue le bon choix (passe/dribble/tir) sans perte de balle dans au moins 2 situations sur 3 sous pression.' }
+  ];
+
+  obsData.forEach(function(o) {
+    p2 += '<div class="p2-obs">';
+    p2 += '<div class="p2-head ' + o.cls + '"><span>' + o.titre + '</span><span class="p2-tag">' + o.tag + '</span></div>';
+    p2 += '<div class="p2-levels">';
+    var niveaux = [
+      { d:o.a, bg:'la', badge:'ba' },
+      { d:o.b, bg:'lb', badge:'bb' },
+      { d:o.c, bg:'lc', badge:'bc' }
+    ];
+    niveaux.forEach(function(n) {
+      p2 += '<div class="p2-level ' + n.bg + '">';
+      p2 += '<div class="p2-badge ' + n.badge + '">' + n.d.label + '</div>';
+      p2 += '<div class="p2-desc">' + n.d.desc + '</div>';
+      p2 += '<div class="p2-cond"><strong>Conduite observée :</strong> ' + n.d.cond + '</div>';
+      p2 += '</div>';
+    });
+    p2 += '</div>';
+    p2 += '<div class="p2-ind"><strong>📋 Indicateur terrain :</strong> ' + o.ind + '</div>';
+    p2 += '</div>';
+  });
+
+  /* ══════════════════════════════════════════
+     CSS — fenêtre d'impression dédiée
+  ══════════════════════════════════════════ */
+  var css = [
+    ':root{',
+    '  --obs1-bg:#dbeafe;--obs1-head:#1e40af;',
+    '  --obs2-bg:#dcfce7;--obs2-head:#166534;',
+    '  --obs3-bg:#ffedd5;--obs3-head:#9a3412;',
+    '  --col-a:#FCEBEB;--col-a-t:#c0392b;--col-a-b:#e8b4b8;',
+    '  --col-b:#FAEEDA;--col-b-t:#d35400;--col-b-b:#f0c98c;',
+    '  --col-c:#EAF3DE;--col-c-t:#27ae60;--col-c-b:#a9d18e;',
+    '  --primary:#1a3a5c;--border:#dde3ec;--text:#1c2b3a;--muted:#6b7c93;',
+    '  --fd:\'Georgia\',serif;--fb:\'Trebuchet MS\',\'Segoe UI\',sans-serif;',
+    '}',
+    '*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}',
+    'body{font-family:var(--fb);font-size:11px;background:white;color:var(--text)}',
+    /* layout pages */
+    '.page1{padding:8mm 10mm;page-break-after:always;break-after:page}',
+    '.page2{padding:8mm 10mm}',
+    /* PAGE 1 — en-tête */
+    '.sheet-header{background:var(--primary);color:white;border-radius:7px 7px 0 0;padding:10px 16px;display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;-webkit-print-color-adjust:exact;print-color-adjust:exact}',
+    '.sh-title{font-family:var(--fd);font-size:.92rem;font-weight:bold;line-height:1.4}',
+    '.sh-info{font-size:.78rem;opacity:.88;text-align:right;line-height:1.7}',
+    '.sheet-sub{background:#e8edf4;border:1px solid #bcc6d4;border-top:none;padding:5px 16px;font-size:.72rem;color:var(--muted);font-style:italic;-webkit-print-color-adjust:exact;print-color-adjust:exact}',
+    /* PAGE 1 — tableau */
+    '.gtable{width:100%;border-collapse:collapse;font-size:.8rem;border:1px solid #bcc6d4;border-top:none}',
+    '.gtable th{border:1px solid #bcc6d4;padding:7px 6px;text-align:center;font-size:.72rem;font-weight:700}',
+    '.th-num{background:#e8edf4;color:var(--primary);width:34px;-webkit-print-color-adjust:exact;print-color-adjust:exact}',
+    '.th-nom{background:#e8edf4;color:var(--primary);text-align:left;min-width:150px;-webkit-print-color-adjust:exact;print-color-adjust:exact}',
+    '.th-obs1{background:var(--obs1-head);color:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}',
+    '.th-obs2{background:var(--obs2-head);color:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}',
+    '.th-obs3{background:var(--obs3-head);color:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}',
+    '.th-rem{background:#e8edf4;color:var(--primary);min-width:80px;-webkit-print-color-adjust:exact;print-color-adjust:exact}',
+    '.sub{font-size:.65rem;font-weight:600;padding:4px 5px}',
+    '.sub.obs1{background:var(--obs1-bg);color:var(--obs1-head);-webkit-print-color-adjust:exact;print-color-adjust:exact}',
+    '.sub.obs2{background:var(--obs2-bg);color:var(--obs2-head);-webkit-print-color-adjust:exact;print-color-adjust:exact}',
+    '.sub.obs3{background:var(--obs3-bg);color:var(--obs3-head);-webkit-print-color-adjust:exact;print-color-adjust:exact}',
+    '.gtable td{border:1px solid #d0d8e4;height:30px;vertical-align:middle;padding:4px 6px}',
+    '.td-num{text-align:center;font-size:.74rem;color:var(--muted);font-weight:600;background:#f4f6f9;width:34px;-webkit-print-color-adjust:exact;print-color-adjust:exact}',
+    '.td-nom{font-size:.82rem;background:#fafbfd;-webkit-print-color-adjust:exact;print-color-adjust:exact}',
+    '.td-obs{background:white;min-width:60px}',
+    '.td-rem{background:white;min-width:70px}',
+    '.gtable tbody tr:nth-child(even) .td-nom{background:#f0f4f9;-webkit-print-color-adjust:exact;print-color-adjust:exact}',
+    '.gtable tbody tr:nth-child(even) .td-num{background:#eaeff5;-webkit-print-color-adjust:exact;print-color-adjust:exact}',
+    '.gtable tbody tr:nth-child(5n) td{border-bottom:2px solid #9aafc4}',
+    'tr{page-break-inside:avoid}',
+    /* PAGE 2 */
+    '.p2-header{background:var(--primary);color:white;border-radius:7px 7px 0 0;padding:11px 18px;font-family:var(--fd);font-size:.95rem;font-weight:bold;-webkit-print-color-adjust:exact;print-color-adjust:exact}',
+    '.p2-intro{background:#e8f0fb;border:1px solid #b8d0ea;border-top:none;border-radius:0 0 7px 7px;padding:8px 16px;font-size:.78rem;color:var(--primary);line-height:1.5;margin-bottom:12px}',
+    '.p2-obs{border:1px solid #bcc6d4;border-radius:7px;overflow:hidden;margin-bottom:11px;page-break-inside:avoid}',
+    '.p2-head{padding:8px 14px;color:white;font-weight:bold;font-size:.85rem;display:flex;align-items:center;gap:10px;-webkit-print-color-adjust:exact;print-color-adjust:exact}',
+    '.p2-head.h1{background:var(--obs1-head)}.p2-head.h2{background:var(--obs2-head)}.p2-head.h3{background:var(--obs3-head)}',
+    '.p2-tag{background:rgba(255,255,255,.2);border-radius:4px;padding:2px 8px;font-size:.68rem;font-weight:600}',
+    '.p2-levels{display:grid;grid-template-columns:repeat(3,1fr)}',
+    '.p2-level{padding:10px 12px;border-right:1px solid var(--border)}',
+    '.p2-level:last-child{border-right:none}',
+    '.la{background:var(--col-a);-webkit-print-color-adjust:exact;print-color-adjust:exact}',
+    '.lb{background:var(--col-b);-webkit-print-color-adjust:exact;print-color-adjust:exact}',
+    '.lc{background:var(--col-c);-webkit-print-color-adjust:exact;print-color-adjust:exact}',
+    '.p2-badge{display:inline-block;border-radius:20px;padding:2px 9px;font-size:.73rem;font-weight:800;margin-bottom:5px;-webkit-print-color-adjust:exact;print-color-adjust:exact}',
+    '.ba{background:var(--col-a-b);color:var(--col-a-t)}.bb{background:var(--col-b-b);color:var(--col-b-t)}.bc{background:var(--col-c-b);color:var(--col-c-t)}',
+    '.p2-desc{font-size:.77rem;line-height:1.5;color:var(--text);margin-bottom:5px}',
+    '.p2-cond{font-size:.72rem;color:var(--muted);line-height:1.45;border-top:1px solid rgba(0,0,0,.08);padding-top:5px}',
+    '.p2-cond strong{color:var(--text);font-size:.71rem}',
+    '.p2-ind{background:#f8fafd;border-top:1px dashed var(--border);padding:7px 14px;font-size:.72rem;color:var(--muted)}',
+    '.p2-ind strong{color:var(--primary)}',
+    '@page{margin:8mm 10mm;size:A4 landscape}'
+  ].join('\n');
+
+  var win = window.open('', '_blank', 'width=1200,height=800');
+  win.document.write(
+    '<!DOCTYPE html><html lang="fr"><head>' +
+    '<meta charset="UTF-8">' +
+    '<title>Grille d\'observation — Basketball DI-BSK</title>' +
+    '<style>' + css + '</style>' +
+    '</head><body>' +
+    '<div class="page1">' + p1 + '</div>' +
+    '<div class="page2">' + p2 + '</div>' +
+    '<script>window.onload=function(){window.focus();window.print();window.close();};<\/script>' +
+    '</body></html>'
+  );
+  win.document.close();
+}
+
+function hesc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
 
 // COND.2 — Fermer le bandeau GitHub et mémoriser le choix
 function dismissGithubBanner() {
